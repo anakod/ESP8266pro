@@ -70,6 +70,8 @@ But you can use HardwareSerial instead this, or additional hardware serial port 
 ```C
 ESP8266pro wifi(/*ESP8266_SERIAL*/, /*OPTIONAL_DEBUG_SERIAL*/);
 ```
+## Installation
+Extract all files to `<Your Arduino folder>\libraries\ESP8266pro` directory. Restart Arduino IDE and open examples from list.
 
 ## Before beginning of work
 
