@@ -1,5 +1,6 @@
 # ESP8266pro
-ESP8266 Arduino library - easy to use and powerfull WiFi Module adapter
+**ESP8266pro** Arduino library - is easy to use and powerfull WiFi Module wrapper.
+Now it implements all major module features, break code into the classes, and don't require any AT commands knowledge.
 
 ## Some examples
 #### Send HTTP request
@@ -73,7 +74,7 @@ ESP8266pro wifi(/*ESP8266_SERIAL*/, /*OPTIONAL_DEBUG_SERIAL*/);
 ## Before beginning of work
 
 1. Update ESP8266 firmware to lastest version before using this library (at least AT v0.20)
-2. Verify, what WiFi module UART works on 9600 speed (you can choose different speed, if you want)
+2. Verify, what WiFi module UART works on 9600 speed (also you can choose different speed, but don't forget about software serial limitations)
 3. Increase _SS_MAX_RX_BUFF in Arduino SoftwareSerial.h to prevent data loss (because by default, Arduino has very small buffers for software and hardware serials). I recommend size of 256 bytes for that:
 
 ```C
