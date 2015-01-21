@@ -1,0 +1,45 @@
+#######################################
+# Syntax Coloring Map For ESP8266pro
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ESP8266pro	KEYWORD1
+ESP8266proClient	KEYWORD1
+ESP8266proServer	KEYWORD1
+ESP8266proConnection	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+stationConnect	KEYWORD2
+stationDisconnect	KEYWORD2
+stationIP	KEYWORD2
+stationMAC	KEYWORD2
+accessPointStart	KEYWORD2
+accessPointStop	KEYWORD2
+accessPointIP	KEYWORD2
+accessPointMAC	KEYWORD2
+execute	KEYWORD2
+getState	KEYWORD2
+getLine	KEYWORD2
+getLineItem	KEYWORD2
+getLinesCount	KEYWORD2
+start	KEYWORD2
+stop	KEYWORD2
+processRequests	KEYWORD2
+closeAllConnections	KEYWORD2
+connectTcp	KEYWORD2
+connectUdp	KEYWORD2
+close	KEYWORD2
+waitResponse	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+NULL_IP	LITERAL1
