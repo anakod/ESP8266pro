@@ -15,16 +15,16 @@ class ESP8266proClient : public ESP8266proConnection, public IESP8266proBaseRece
 public:
 	ESP8266proClient(ESP8266pro& esp);
 	ESP8266proClient(ESP8266pro& esp, ConnectionDataCallback callback);
-	boolean connectTcp(String addr, int port);
-	boolean connectUdp(String addr, int port);
+	bool connectTcp(String addr, int port);
+	bool connectUdp(String addr, int port);
 	
-	virtual boolean close();
+	virtual bool close();
 	
-	boolean waitResponse(int msTimeOut = 5000);
+	bool waitResponse(int msTimeOut = 5000);
 	
 	// Internal methods
-	virtual int getId();
-	virtual void onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action);
+	virtual uint8_t getId();
+	virtual void onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action);
 	
 private:
 	ConnectionDataCallback dataCallback;

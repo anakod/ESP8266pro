@@ -22,8 +22,8 @@ ESP8266pro wifi(espSerial, Serial);
 ESP8266proServer server(wifi, onClientRequest);
 String requestPaths[ESP_MAX_CONNECTIONS];
 
-const char* ssid = "DontConnect";
-const char* password = "ignoreme";
+const char* ssid = "YouWiFi";
+const char* password = "youpasswordhere";
 
 const int ledPin = 13;
 
@@ -39,7 +39,7 @@ void setup()
   }
   
   // Initialize ESP
-  wifi.begin(eODM_Dump);
+  wifi.begin();
   
   // Connect to WiFi network
   // In future ESP should automatically reconnect

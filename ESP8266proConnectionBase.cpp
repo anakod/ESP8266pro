@@ -9,63 +9,52 @@ ESP8266proConnection::ESP8266proConnection(ESP8266pro& esp) : parent(esp)
 {
 }
 
-boolean ESP8266proConnection::send(String data)
+bool ESP8266proConnection::send(String data)
 {
 	return internalSend(NULL, data.c_str());
 }
 
-boolean ESP8266proConnection::send(const __FlashStringHelper* data)
+bool ESP8266proConnection::send(const __FlashStringHelper* data)
 {
 	return internalSend(data, NULL);
 }
 
-boolean ESP8266proConnection::internalSend(const __FlashStringHelper* dataP, const char* dataR)
+bool ESP8266proConnection::internalSend(const __FlashStringHelper* dataP, const char* dataR)
 {
-	if (dataR == NULL)
-		dataR = "";
-
 	bool ok;
 	int len = 0;
 	if (dataP != NULL)
 		len += strlen_P(reinterpret_cast<PGM_P>(dataP));
-	len += strlen(dataR);
+	if (dataR != NULL)
+		len += strlen(dataR);
+
+	uint8_t id = getId();
+	if (id == ESP_INVALID_CONNECTION) return false;
+	parent.execute((String)"AT+CIPSEND=" + id + "," + len, eCEM_NoResponse);	
 	
-	for (unsigned char i = 0; i < 3; i++)
-	{
-		int id = getId();
-		if (id == -1) return false;
-		parent.execute((String)"AT+CIPSEND=" + id + "," + len, eCEM_NoResponse);	
-		
-		// Write request data
-		if (dataP != NULL)
-			parent.writeString(dataP);
-		
-		ok = parent.execute(dataR, eCEM_NoLineBreak);
-		if (ok)
-			break; // Success
-		else if (parent.getState() == ePS_Busy)
-			continue; // Trying to repeat
-		else
-			return false; // Error
-	}
+	// Write request data
+	if (dataP != NULL)
+		parent.writeString(dataP);
+	
+	ok = parent.execute(dataR!= NULL ? dataR : "", eCEM_NoLineBreak);
 	if (!ok) return false;
 	
 	// Wait "SEND OK" response
-	for (unsigned char i = 0; i < 3; i++)
+	for (uint8_t i = 0; i < 3; i++)
 	{
-		if (getId() == -1) break; // Already closed..
-		if (parent.getState() == ePS_Completed || parent.getState() == ePS_Error) break;
-		parent.execute("", eCEM_NoLineBreak);
+		if (getId() == ESP_INVALID_CONNECTION) return false; // Already closed..
+		if (parent.getState() == ePS_Completed) return true;
+		if (!parent.execute("", eCEM_NoLineBreak)) return false;
 	}
 	
-	return parent.getState() == ePS_Completed;
+	return false;
 }
 
-boolean ESP8266proConnection::close()
+bool ESP8266proConnection::close()
 {
-	int id = getId();
-	boolean ok;
-	if (id != -1)
+	uint8_t id = getId();
+	bool ok;
+	if (id != ESP_INVALID_CONNECTION)
 		return parent.execute((String)"AT+CIPCLOSE=" + id, eCEM_ShortTimeOut);
 	else
 		return false;
@@ -73,32 +62,32 @@ boolean ESP8266proConnection::close()
 
 ///////////////////////////////////////////////////////////////////////
 
-ESP8266proServerConection::ESP8266proServerConection(ESP8266pro& esp, int id)
+ESP8266proServerConection::ESP8266proServerConection(ESP8266pro& esp, uint8_t id)
 	: ESP8266proConnection(esp), cid(id)
 {
 	uses = 0;
 }
 
-int ESP8266proServerConection::getId()
+uint8_t ESP8266proServerConection::getId()
 {
 	return cid;
 }
 
-boolean ESP8266proServerConection::send(String data)
+bool ESP8266proServerConection::send(String data)
 {
-	if (cid == -1) return false; // Already losted link
+	if (cid == ESP_INVALID_CONNECTION) return false; // Already losted link
 	return ESP8266proConnection::send(data);
 }
 
-boolean ESP8266proServerConection::send(const __FlashStringHelper* data)
+bool ESP8266proServerConection::send(const __FlashStringHelper* data)
 {
-	if (cid == -1) return false; // Already losted link
+	if (cid == ESP_INVALID_CONNECTION) return false; // Already losted link
 	return ESP8266proConnection::send(data);
 }
 
-boolean ESP8266proServerConection::close()
+bool ESP8266proServerConection::close()
 {
-	if (cid == -1) return false; // Already losted link
+	if (cid == ESP_INVALID_CONNECTION) return false; // Already losted link
 	return ESP8266proConnection::close();
 }
 
@@ -112,12 +101,12 @@ void ESP8266proServerConection::decrementUses()
 	uses--;
 }
 
-boolean ESP8266proServerConection::isUsed()
+/*bool ESP8266proServerConection::isUsed()
 {
 	return uses > 0;
-}
+}*/
 
 void ESP8266proServerConection::dispose()
 {
-	cid = -1;
+	cid = ESP_INVALID_CONNECTION;
 }

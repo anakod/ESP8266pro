@@ -20,8 +20,8 @@ SoftwareSerial espSerial(9, 10); // RX, TX
 
 ESP8266pro wifi(espSerial, Serial); // Serial, DebugSerial
 
-const char* ssid = "DontConnect";
-const char* password = "ignoreme";
+const char* ssid = "YouWiFi";
+const char* password = "youpasswordhere";
 
 void setup()
 {
@@ -31,6 +31,7 @@ void setup()
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
+  Serial.println("Starting");
   
   // Initialize ESP
   wifi.begin(eODM_None); // Disable all debug messages

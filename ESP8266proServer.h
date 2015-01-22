@@ -16,14 +16,14 @@ class ESP8266proServer : public IESP8266proBaseReceiver
 public:
 	ESP8266proServer(ESP8266pro& esp, ConnectionDataCallback callback);
 	
-	boolean start(int port); // Only one working Server instance per time
+	bool start(int port); // Only one working Server instance per time
 	void stop();
 	
-	boolean processRequests(); // Non blocking operation, if no data received
+	bool processRequests(); // Non blocking operation, if no data received
 	void closeAllConnections();
 	
 	// Internal method
-	virtual void onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action);
+	virtual void onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action);
 	
 private:
 	ESP8266pro &parent;
@@ -31,7 +31,7 @@ private:
 	int serverPort;
 	ConnectionDataCallback dataCallback;
 	ESP8266proServerConection* virtualConnection[ESP_MAX_CONNECTIONS];
-	bool receiveCompleted[ESP_MAX_CONNECTIONS];
+	bool receiveProcessing[ESP_MAX_CONNECTIONS];
 };
 
 #endif

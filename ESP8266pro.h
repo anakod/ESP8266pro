@@ -36,19 +36,19 @@ public:
 	String stationIP();
 	String stationMAC();
 	
-	bool accessPointStart(const String& ssid, const String& password, EncriptionMode encription = eEM_WPA2_PSK, int wifiChannel = 5);
+	bool accessPointStart(const String& ssid, const String& password, EncriptionMode encription = eEM_WPA2_PSK, uint8_t wifiChannel = 5);
 	bool accessPointStop();
 	String accessPointIP();
 	String accessPointMAC();
 	
 	// Internal methods!
-	int addConnection(IESP8266proBaseReceiver* target);
-	int getConnectionId(IESP8266proBaseReceiver* target);
+	uint8_t addConnection(IESP8266proBaseReceiver* target);
+	uint8_t getConnectionId(IESP8266proBaseReceiver* target);
 	void removeConnection(IESP8266proBaseReceiver* target);
-	boolean setServer(IESP8266proBaseReceiver* serverInstance);
+	bool setServer(IESP8266proBaseReceiver* serverInstance);
 	
 protected:
-	virtual void onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action);
+	virtual void onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action);
 	
 private:
 	IESP8266proBaseReceiver* connections[ESP_MAX_CONNECTIONS];

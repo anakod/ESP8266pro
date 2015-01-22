@@ -11,27 +11,30 @@
 	#include "WProgram.h"
 #endif
 
+#define ESP_INVALID_CONNECTION			((uint8_t)255)
+
 class ESP8266pro;
 class ESP8266Connection;
+class ESP8266proServer;
 
 class IESP8266proBaseReceiver
 {
 public:
-	virtual void onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action) = 0;
+	virtual void onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action) = 0;
 };
 
 class ESP8266proConnection
 {
 public:
-	virtual int getId() = 0;
+	virtual uint8_t getId() = 0;
 	
 	ESP8266proConnection(ESP8266pro& esp);
-	virtual boolean send(String data);
-	virtual boolean send(const __FlashStringHelper* data);
-	virtual boolean close();
+	virtual bool send(String data);
+	virtual bool send(const __FlashStringHelper* data);
+	virtual bool close();
 
 protected:
-	boolean internalSend(const __FlashStringHelper* dataP, const char* dataR);
+	bool internalSend(const __FlashStringHelper* dataP, const char* dataR);
 	
 protected:
 	ESP8266pro &parent;
@@ -40,22 +43,24 @@ protected:
 class ESP8266proServerConection : public ESP8266proConnection
 {
 public:
-	ESP8266proServerConection(ESP8266pro& esp, int id);
+	ESP8266proServerConection(ESP8266pro& esp, uint8_t id);
 	
-	virtual boolean send(String data);
-	virtual boolean send(const __FlashStringHelper* data);
-	virtual boolean close();
-	virtual int getId();
+	virtual bool send(String data);
+	virtual bool send(const __FlashStringHelper* data);
+	virtual bool close();
+	virtual uint8_t getId();
 	
 	// Internal methods
 	void incrimentUses();
 	void decrementUses();
-	boolean isUsed();
+	//bool isUsed();
 	void dispose();
+	
+	friend class ESP8266proServer;
 
 private:
-	int cid;
-	unsigned int uses;
+	uint8_t cid;
+	uint8_t uses;
 };
 
 #endif

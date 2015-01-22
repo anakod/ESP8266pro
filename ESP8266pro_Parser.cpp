@@ -38,10 +38,12 @@ void ESP8266pro_Parser::restart()
 	delay(3500);
 	while (espStream.available())
 	{
-		char x = espStream.read();
+		char dbg[] = {0, 0};
+		dbg[0] = espStream.read();
+		
 		#ifndef NODEBUG
 		if ((debugMode & eODM_Dump) == eODM_Dump)
-			debugPrint((String)x, false);
+			debugPrint(dbg, false);
 		#endif
 		if (!espStream.available())
 			delay(180);
@@ -64,23 +66,27 @@ ProcessingState ESP8266pro_Parser::getState()
 	return state;
 }
 
-boolean ESP8266pro_Parser::execute(const String& msg, CommandExecutionMode mode/* = eCEM_DeafaultWithSelector*/)
+bool ESP8266pro_Parser::execute(const String& msg, CommandExecutionMode mode/* = eCEM_DeafaultWithSelector*/)
 {
-	String cmd = mode != eCEM_NoLineBreak ? msg + ESP_LINE_WRAPPER : msg;
 	resetParser();
 	
 	// First selector start
-	int splt = cmd.indexOf("+");
+	int splt = msg.indexOf("+");
 	if (splt == -1)
 		splt = 0;
 	else
 		splt++;
 	String selector = "";
-	for (int i = splt + 1; i < cmd.length(); i++)
+	for (int i = splt + 1; true; i++)
 	{
-		if (!isalpha(cmd[i]))
+		if (!isalpha(msg[i]))
 		{
-			selector = cmd.substring(splt, i);
+			selector = msg.substring(splt, i);
+			break;
+		}
+		else if (i == msg.length() - 1)
+		{
+			selector = msg.substring(splt);
 			break;
 		}
 	}
@@ -90,7 +96,9 @@ boolean ESP8266pro_Parser::execute(const String& msg, CommandExecutionMode mode/
 		debugPrint(msg);
 	#endif
 	
-	espStream.print(cmd);
+	espStream.print(msg);
+	if (mode != eCEM_NoLineBreak)
+		espStream.print(ESP_LINE_WRAPPER);
 	delay(3);
 	
 	int timeOut = 1800;
@@ -100,7 +108,7 @@ boolean ESP8266pro_Parser::execute(const String& msg, CommandExecutionMode mode/
 		timeOut = 7500;
 	
 	if (mode != eCEM_NoResponse)
-		parseResponse(selector, timeOut);
+		parseResponse(selector.c_str(), timeOut);
 	else
 		state = ePS_OK;
 
@@ -121,9 +129,9 @@ void ESP8266pro_Parser::resetParser()
 	state = ePS_Ready;
 }
 
-String ESP8266pro_Parser::getLine(int lineId)
+String ESP8266pro_Parser::getLine(uint8_t lineId)
 {
-	int line = 0;
+	uint8_t line = 0;
 	int start = 0;
 	
 	for (int i = 0; i < response.length(); i++)
@@ -142,20 +150,20 @@ String ESP8266pro_Parser::getLine(int lineId)
 	return "";
 }
 
-String ESP8266pro_Parser::getLineItem(int lineId, int itemId)
+String ESP8266pro_Parser::getLineItem(uint8_t lineId, uint8_t itemId)
 {
 	String line = getLine(lineId);
 	line += ","; // to simplify parsing loop breaking
 	
-	int item = 0;
+	uint8_t item = 0;
 	int start = 0;
-	boolean insideItem = false;
+	bool insideItem = false;
 	
 	for (int i = 0; i < line.length(); i++)
 	{
 		if (line[i] == '\"')
 			insideItem = !insideItem;
-		else if (line[i] == ',' && !insideItem)
+		if (line[i] == ',' && !insideItem)
 		{
 			if (item == itemId)
 			{
@@ -179,7 +187,7 @@ int ESP8266pro_Parser::getLinesCount()
 	return k;
 }
 
-boolean ESP8266pro_Parser::connectionDataReceive(bool waitData/* = false*/)
+bool ESP8266pro_Parser::connectionDataReceive(bool waitData/* = false*/)
 {
 	if (!waitData && espStream.available() < 5)
 		return false;
@@ -256,7 +264,7 @@ void ESP8266pro_Parser::processConnectionDataReceive(bool processData/* = true*/
 	buffer = NULL;
 }
 
-void ESP8266pro_Parser::onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action)
+void ESP8266pro_Parser::onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action)
 {
 }
 
@@ -265,20 +273,22 @@ String ESP8266pro_Parser::trimResponse(String originalLine)
 	originalLine.trim();
 	unsigned char quotesCount = 0;
 	unsigned char bracketsCount = 0;
-	for (int i = 0; i < originalLine.length(); i++)
+	const char* cstr = originalLine.c_str();
+	const char* cend;
+
+	for (const char* p = cstr; *p; p++)
 	{
-		if (originalLine[i] == '\"')
+		if (*p == '\"')
 			quotesCount++;
-		if (originalLine[i] == '(' || originalLine[i] == ')')
+		if (*p == '(' || *p == ')')
 			bracketsCount++;
+		cend = p;
 	}
 	
-	if (originalLine.startsWith("(") && originalLine.endsWith(")") && bracketsCount == 2)
+	if ( (*cstr == '(' && *cend == ')' && bracketsCount == 2) || (*cstr == '\"' && *cend == '\"' && quotesCount == 2) )
 		return trimResponse(originalLine.substring(1, originalLine.length()-1));
-	if (originalLine.startsWith("\"") && originalLine.endsWith("\"") && quotesCount == 2)
-		return trimResponse(originalLine.substring(1, originalLine.length()-1));
-	
-	return originalLine;
+	else
+		return originalLine;
 }
 
 void ESP8266pro_Parser::writeString(const __FlashStringHelper* data)
@@ -286,20 +296,24 @@ void ESP8266pro_Parser::writeString(const __FlashStringHelper* data)
 	espStream.print(data);
 }
 
-boolean ESP8266pro_Parser::parseResponse(const String& selector, int msTimeOut/* = 1500*/)
+bool ESP8266pro_Parser::parseResponse(const char* selector, int msTimeOut/* = 1500*/)
 {
-	String selectorMsg = "+" + selector + ":";
+	//String selectorMsg = (String)"+" + selector + ":";
+	int sellen = strlen(selector);
 	resetParser();
 	
 	unsigned long startMillis = millis();
 	while (millis() - startMillis < msTimeOut)
 	{
 		String line = readLine();
-		if (line.length() > 0) startMillis = millis();
+		const char* lstr = line.c_str();
+		if (*lstr) startMillis = millis();
 		
-		if (line.startsWith(selectorMsg))
+		//if (line.startsWith(selectorMsg))
+		
+		if (lstr[0] == '+' && strncmp(lstr + 1, selector, sellen) == 0 && lstr[1 + sellen] == ':')
 		{
-			String responseData = line.substring(selectorMsg.length());
+			String responseData = line.substring(sellen + 2);
 			response += responseData + "\n";
 			#ifndef NODEBUG
 			if (debugMode == eODM_Data)
@@ -309,34 +323,25 @@ boolean ESP8266pro_Parser::parseResponse(const String& selector, int msTimeOut/*
 
 		#ifndef NODEBUG		
 		if ((debugMode & eODM_Dump) == eODM_Dump)
-			debugPrint(line);
+			debugPrint(lstr);
 		#endif
 		
-		if (line == ESP_STATUS_OK || line == ESP_STATUS_NO_CHANGE)
+		if (strcmp(lstr, ESP_STATUS_OK)==0 || strcmp(lstr, ESP_STATUS_NO_CHANGE)==0)
 		{
 			state = ePS_OK;
 			return true;
 		}
-		else if (line == ESP_STATUS_SEND_OK)
+		else if (strcmp(lstr, ESP_STATUS_SEND_OK)==0)
 		{
 			state = ePS_Completed;
 			return true;
 		}
-		else if (line == ESP_STATUS_ERR || line == ESP_STATUS_NO_LINK || line == ESP_STATUS_ONLINK)
+		else if (strcmp(lstr, ESP_STATUS_ERR)==0 || strcmp(lstr, ESP_STATUS_NO_LINK)==0 || strcmp(lstr, ESP_STATUS_ONLINK)==0)
 		{
 			state = ePS_Error;
 			#ifndef NODEBUG
 			if (debugMode == eODM_Data)
 				debugPrint("<ERROR>");
-			#endif
-			return false;
-		}
-		else if (line.startsWith(ESP_STATUS_BUSY_START) && line.endsWith(ESP_STATUS_BUSY_END))
-		{
-			state = ePS_Busy;
-			#ifndef NODEBUG
-			if (debugMode == eODM_Data)
-				debugPrint("<BUSY>");
 			#endif
 			return false;
 		}
@@ -373,12 +378,12 @@ String ESP8266pro_Parser::readLine()
 }
 
 #ifndef NODEBUG
-void ESP8266pro_Parser::debugPrint(const String& text, boolean lineWrap/* = true*/)
+void ESP8266pro_Parser::debugPrint(const String& text, bool lineWrap/* = true*/)
 {
 	debugPrint(text.c_str(), lineWrap);
 }
 
-void ESP8266pro_Parser::debugPrint(const char* text, boolean lineWrap/* = true*/)
+void ESP8266pro_Parser::debugPrint(const char* text, bool lineWrap/* = true*/)
 {
 	if (debugStream == NULL || debugMode == eODM_None) return;
 	if (lineWrap)

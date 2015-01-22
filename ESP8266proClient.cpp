@@ -13,12 +13,12 @@ ESP8266proClient::ESP8266proClient(ESP8266pro& esp, ConnectionDataCallback callb
 {
 }
 
-boolean ESP8266proClient::connectTcp(String addr, int port)
+bool ESP8266proClient::connectTcp(String addr, int port)
 {
-	int id = parent.addConnection(this);
-	if (id == -1) return false;
+	uint8_t id = parent.addConnection(this);
+	if (id == ESP_INVALID_CONNECTION) return false;
 	String request = (String)"AT+CIPSTART=" + id + ",\"TCP\",\"" + addr + "\"," + port;
-	boolean ok = parent.execute(request);
+	bool ok = parent.execute(request);
 	if (!ok)
 	{
 		delay(600);
@@ -29,18 +29,18 @@ boolean ESP8266proClient::connectTcp(String addr, int port)
 	return ok;
 }
 
-boolean ESP8266proClient::connectUdp(String addr, int port)
+bool ESP8266proClient::connectUdp(String addr, int port)
 {
-	int id = parent.addConnection(this);
-	if (id == -1) return false;
-	boolean ok = parent.execute((String)"AT+CIPSTART=" + id + ",\"UDP\",\"" + addr + "\"," + port);
+	uint8_t id = parent.addConnection(this);
+	if (id == ESP_INVALID_CONNECTION) return false;
+	bool ok = parent.execute((String)"AT+CIPSTART=" + id + ",\"UDP\",\"" + addr + "\"," + port);
 	if (!ok) close();
 	return ok;
 }
 
-boolean ESP8266proClient::close()
+bool ESP8266proClient::close()
 {
-	boolean linkClosed = false;
+	bool linkClosed = false;
 	linkClosed = ESP8266proConnection::close();
 	if (linkClosed)
 		parent.execute("", eCEM_NoLineBreak); // Read "CLOSED" response from ESP
@@ -48,11 +48,11 @@ boolean ESP8266proClient::close()
 	return linkClosed;
 }
 
-boolean ESP8266proClient::waitResponse(int msTimeOut/* = 5000*/)
+bool ESP8266proClient::waitResponse(int msTimeOut/* = 5000*/)
 {
 	// check actual
-	int id = getId();
-	if (id == -1) return false;
+	uint8_t id = getId();
+	if (id == ESP_INVALID_CONNECTION) return false;
 	
 	unsigned long startMillis = millis();
 	do
@@ -65,12 +65,12 @@ boolean ESP8266proClient::waitResponse(int msTimeOut/* = 5000*/)
 	return false;
 }
 
-int ESP8266proClient::getId()
+uint8_t ESP8266proClient::getId()
 {
 	return parent.getConnectionId(this);
 }
 
-void ESP8266proClient::onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action)
+void ESP8266proClient::onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action)
 {
 	if (action == eDRA_Begin) return; // Nothing here
 	if (dataCallback != NULL)

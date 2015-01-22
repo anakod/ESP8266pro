@@ -17,7 +17,7 @@
 
 // Configurable by user
 // IP receive buffer size
-#define ESP_RECEIVE_BUFSIZE			100
+#define ESP_RECEIVE_BUFSIZE			80
 
 // Internal params, depends on ESP Firmware
 #define ESP_LINE_WRAPPER			"\r\n"
@@ -25,8 +25,6 @@
 #define ESP_STATUS_OK				"OK"
 #define ESP_STATUS_SEND_OK			"SEND OK"
 #define ESP_STATUS_ERR				"ERROR"
-#define ESP_STATUS_BUSY_START		"busy"
-#define ESP_STATUS_BUSY_END			".."
 #define ESP_STATUS_NO_CHANGE		"no change"
 #define ESP_STATUS_NO_LINK			"link is not"
 #define ESP_STATUS_ONLINK			"link is builded"
@@ -47,7 +45,6 @@ enum ProcessingState
 	ePS_OK,
 	ePS_Completed,
 	ePS_Error,
-	ePS_Busy,
 	ePS_NoResponse
 };
 
@@ -77,28 +74,28 @@ public:
 	bool initializeParser(OutputDebugMode debugOutMode = eODM_Data);
 	void restart();
 	
-	boolean execute(const String& msg, CommandExecutionMode mode = eCEM_DeafaultWithSelector);
+	bool execute(const String& msg, CommandExecutionMode mode = eCEM_DeafaultWithSelector);
 	ProcessingState getState();
-	String getLine(int lineId);
-	String getLineItem(int lineId, int itemId);
+	String getLine(uint8_t lineId);
+	String getLineItem(uint8_t lineId, uint8_t itemId);
 	int getLinesCount();
 	
 	// Internal methods
 	void writeString(const __FlashStringHelper* data);
-	boolean connectionDataReceive(bool waitData = false);
+	bool connectionDataReceive(bool waitData = false);
 	
 protected:
 	void resetParser();
-	virtual void onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action);
+	virtual void onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action);
 #ifndef NODEBUG
-	void debugPrint(const String& text, boolean lineWrap = true);
-	void debugPrint(const char* text, boolean lineWrap = true);
+	void debugPrint(const String& text, bool lineWrap = true);
+	void debugPrint(const char* text, bool lineWrap = true);
 #endif
 
 private:
 	void processConnectionDataReceive(bool processData = true);
 	String readLine();
-	boolean parseResponse(const String& selector, int msTimeOut = 1500);
+	bool parseResponse(const char* selector, int msTimeOut = 1500);
 	String trimResponse(String originalLine);
 	
 private:

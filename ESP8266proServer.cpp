@@ -7,14 +7,14 @@
 ESP8266proServer::ESP8266proServer(ESP8266pro& esp, ConnectionDataCallback callback)
 	: parent(esp), dataCallback(callback)
 {
-	for (int i=0; i < ESP_MAX_CONNECTIONS; i++)
+	for (uint8_t i=0; i < ESP_MAX_CONNECTIONS; i++)
 	{
 		virtualConnection[i] = new ESP8266proServerConection(parent, i);
-		receiveCompleted[i] = false;
+		receiveProcessing[i] = false;
 	}
 }
 
-boolean ESP8266proServer::start(int port)
+bool ESP8266proServer::start(int port)
 {
 	if (!parent.setServer(this)) return false; // May be some other server already started?
 	serverPort = port;
@@ -23,14 +23,14 @@ boolean ESP8266proServer::start(int port)
 
 void ESP8266proServer::stop()
 {
-	for (int i=0; i < ESP_MAX_CONNECTIONS; i++)
-		receiveCompleted[i] = false;
+	for (uint8_t i=0; i < ESP_MAX_CONNECTIONS; i++)
+		receiveProcessing[i] = false;
 	parent.execute((String)"AT+CIPSERVER=0," + serverPort);
 	parent.setServer(NULL);
 	parent.restart();
 }
 
-boolean ESP8266proServer::processRequests()
+bool ESP8266proServer::processRequests()
 {
 	bool ok = false;
 	bool processed;
@@ -42,11 +42,11 @@ boolean ESP8266proServer::processRequests()
 		processed = false;
 		
 		// Complete finished requests
-		for (int i=0; i < ESP_MAX_CONNECTIONS; i++)
+		for (uint8_t i=0; i < ESP_MAX_CONNECTIONS; i++)
 		{
-			if (receiveCompleted[i])
+			if (receiveProcessing[i])
 			{
-				receiveCompleted[i] = false; // Can be updated soon
+				receiveProcessing[i] = false; // Can be updated soon
 				ESP8266proServerConection* link = virtualConnection[i];
 				link->incrimentUses();
 				dataCallback(link, "", 0, true);
@@ -82,21 +82,21 @@ boolean ESP8266proServer::processRequests()
 void ESP8266proServer::closeAllConnections()
 {
 	if (!parent.execute("AT+CIPSTATUS")) return;
-	for (int i=0; i < parent.getLinesCount(); i++)
+	for (uint8_t i=0; i < parent.getLinesCount(); i++)
 	{
-		int id = parent.getLineItem(i, 0).toInt();
-		int isServer = parent.getLineItem(i, 4).toInt() == 1;
+		uint8_t id = (uint8_t)parent.getLineItem(i, 0).toInt();
+		uint8_t isServer = parent.getLineItem(i, 4).toInt() == 1;
 		if (isServer)
 			virtualConnection[id]->close();
 	}
 }
 
-void ESP8266proServer::onDataReceive(int connectionId, char* buffer, int length, DataReceiveAction action)
+void ESP8266proServer::onDataReceive(uint8_t connectionId, char* buffer, int length, DataReceiveAction action)
 {
 	ESP8266proServerConection* link = virtualConnection[connectionId];
 	if (action == eDRA_Begin)
 	{
-		if (link->isUsed())
+		if (link->uses > 0) // isUsed()
 		{
 			link->dispose();
 			virtualConnection[connectionId] = new ESP8266proServerConection(parent, connectionId);
@@ -110,7 +110,7 @@ void ESP8266proServer::onDataReceive(int connectionId, char* buffer, int length,
 		if (action == eDRA_End)
 		{
 			lastCheck = millis(); // No problems!
-			receiveCompleted[connectionId] = true;
+			receiveProcessing[connectionId] = true;
 		}
 		link->incrimentUses();
 		dataCallback(link, buffer, length, false);
