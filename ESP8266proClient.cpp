@@ -13,7 +13,7 @@ ESP8266proClient::ESP8266proClient(ESP8266pro& esp, ConnectionDataCallback callb
 {
 }
 
-bool ESP8266proClient::connectTcp(String addr, int port)
+bool ESP8266proClient::connectTcp(String addr, long port)
 {
 	uint8_t id = parent.addConnection(this);
 	if (id == ESP_INVALID_CONNECTION) return false;
@@ -29,7 +29,7 @@ bool ESP8266proClient::connectTcp(String addr, int port)
 	return ok;
 }
 
-bool ESP8266proClient::connectUdp(String addr, int port)
+bool ESP8266proClient::connectUdp(String addr, long port)
 {
 	uint8_t id = parent.addConnection(this);
 	if (id == ESP_INVALID_CONNECTION) return false;

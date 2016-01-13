@@ -14,7 +14,7 @@ ESP8266proServer::ESP8266proServer(ESP8266pro& esp, ConnectionDataCallback callb
 	}
 }
 
-bool ESP8266proServer::start(int port)
+bool ESP8266proServer::start(long port)
 {
 	if (!parent.setServer(this)) return false; // May be some other server already started?
 	serverPort = port;

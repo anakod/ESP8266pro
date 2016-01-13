@@ -15,8 +15,8 @@ class ESP8266proClient : public ESP8266proConnection, public IESP8266proBaseRece
 public:
 	ESP8266proClient(ESP8266pro& esp);
 	ESP8266proClient(ESP8266pro& esp, ConnectionDataCallback callback);
-	bool connectTcp(String addr, int port);
-	bool connectUdp(String addr, int port);
+	bool connectTcp(String addr, long port);
+	bool connectUdp(String addr, long port);
 	
 	virtual bool close();
 	
