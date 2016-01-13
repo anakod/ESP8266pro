@@ -16,7 +16,7 @@ class ESP8266proServer : public IESP8266proBaseReceiver
 public:
 	ESP8266proServer(ESP8266pro& esp, ConnectionDataCallback callback);
 	
-	bool start(int port); // Only one working Server instance per time
+	bool start(long port); // Only one working Server instance per time
 	void stop();
 	
 	bool processRequests(); // Non blocking operation, if no data received
