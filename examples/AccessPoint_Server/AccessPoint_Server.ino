@@ -16,13 +16,29 @@
 #include <ESP8266pro.h>
 #include <ESP8266proServer.h>
 
+const char* ssid = "ESP_AP";
+const char* password = "123456789";
+
 SoftwareSerial espSerial(9, 10); // RX, TX
+
+void onClientRequest(ESP8266proConnection* connection,
+          char* buffer, int length, boolean completed)
+{
+  if (completed)
+  {
+    Serial.println(F("onClientRequest"));
+    
+    // Send response from PROGMEM to miminize SRAM usage
+    connection->send(F("HTTP/1.0 200 OK"));
+    connection->send(F("Server: ESP8266pro\r\n"));
+    connection->send(F("Content-Type: text/html\r\n\r\n"));
+    connection->send(F("<p style='color: #444'>Hello from <b>ESP8266pro</b></p>"));
+    connection->close();
+  }
+}
 
 ESP8266pro wifi(espSerial, Serial); // ESP, DBG
 ESP8266proServer server(wifi, onClientRequest);
-
-const char* ssid = "ESP_AP";
-const char* password = "123456789";
 
 void setup()
 {
@@ -70,18 +86,3 @@ void loop()
   } 
 }
 
-void onClientRequest(ESP8266proConnection* connection,
-          char* buffer, int length, boolean completed)
-{
-  if (completed)
-  {
-    Serial.println(F("onClientRequest"));
-    
-    // Send response from PROGMEM to miminize SRAM usage
-    connection->send(F("HTTP/1.0 200 OK"));
-    connection->send(F("Server: ESP8266pro\r\n"));
-    connection->send(F("Content-Type: text/html\r\n\r\n"));
-    connection->send(F("<p style='color: #444'>Hello from <b>ESP8266pro</b></p>"));
-    connection->close();
-  }
-}
