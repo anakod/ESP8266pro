@@ -49,6 +49,13 @@ void setup()
   Serial.println(wifi.stationIP());
 }
 
+// Optional method to process remote response
+void printResponse(ESP8266proConnection* connection,
+          char* buffer, int length, boolean completed)
+{
+  Serial.print(buffer);
+}
+
 void loop()
 {
   // Send request
@@ -59,11 +66,4 @@ void loop()
   con.close();
   
   delay(5000);
-}
-
-// Optional method to process remote response
-void printResponse(ESP8266proConnection* connection,
-          char* buffer, int length, boolean completed)
-{
-  Serial.print(buffer);
 }
